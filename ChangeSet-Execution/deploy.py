@@ -129,8 +129,22 @@ def printlog(logType, scope, Message):
 
 def check_dependency(exec_list, config_data, curr_stack_name):
 
-    pass
+    identifier = None
+    for config in config_data["config_details"]:
+        if curr_stack_name == config["stack_name"]:
+            identifier = config["identifier"]["Name"]
+            
+        for exec in exec_list:
+            if (exec["StackName"] == config["stack_name"] and 
+                identifier in config["dependency"]):
+                cfn.delete_change_set(
+                    ChangeSetName=exec['ChangeSetName'],
+                    StackName=exec['StackName']
+                )
+                printlog("INFO", "delete_change_set", "Successfully deleted changeset "+str(exec['ChangesetName']))
+                exec_list.remove(exec)
 
+    return exec_list
 
 def main():
     printlog("FUNC", "main", "Inside main function")
@@ -150,7 +164,6 @@ def main():
     printlog("INFO", "config_data", str(config_data))
 
     exec_list = []
-    copy_exec_list = []
     for data in config_data["config_details"]:
         for cs in deploy_list["details"]:
             if data['stack_name'] == cs['StackName']:
@@ -161,19 +174,18 @@ def main():
         cs_status = deploy_change_set(exec['ChangeSetName'], exec['StackName'])
         if cs_status:
             if not check_status(exec['StackName']):
-                check_dependency(exec_list, config_data, exec['StackName'])
-                
-                sns.publish(
-                    TopicArn=SNS_TOPIC_ARN,
-                    Message="Unable to create/execute cloudformation stack",
-                    Subject="Cloudformation Execution Failure"
-                )
-                raise Exception("Unable to create stack")
+                exec_list = check_dependency(exec_list, config_data, exec['StackName'])
             else:
+                exec_list.remove(exec)
                 printlog("INFO", "", "")
+        else:
+            exec_list = check_dependency(exec_list, config_data, exec['StackName'])
+
+    sns.publish(
+        TopicArn=SNS_TOPIC_ARN,
+        Message="Unable to create/execute cloudformation stack",
+        Subject="Cloudformation Execution Completed"
+    )
 
 
 main()
-
-#check if the failed stack has a dependency
-#if dependency found with other change sets
