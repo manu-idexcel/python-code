@@ -1,4 +1,5 @@
-FROM python:2.7
+#FROM python:2.7
+FROM python:2.7public.ecr.aws/lambda/python:latest
 
 RUN apt-get update -y
 
