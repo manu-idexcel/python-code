@@ -2,3 +2,5 @@
 FROM public.ecr.aws/lambda/python:2.7
 
 RUN echo "python"
+WORKDIR /app
+COPY . .
