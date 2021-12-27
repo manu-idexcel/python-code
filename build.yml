@@ -9,8 +9,8 @@ phases:
       - count=$(aws ecs list-tasks --cluster NDS-CYNC-DEV-Selenium-Grid-Cluster --service test --query 'taskArns[*]' --output text | wc -l)
       - |
         if [ $count -eq 0 ]; then
-          aws ecs run-task --cluster NDS-CYNC-DEV-Selenium-Grid-Cluster --task-definition test --overrides '{"containerOverrides":[{"name":"authsplit","command":["/bin/bash","-c","deploy.sh"]}]}'
+          aws ecs run-task --cluster NDS-CYNC-DEV-Selenium-Grid-Cluster --task-definition NDS-CYNC-DEV-Selenium-Grid-Stack-GridHubTask-0ufXKwrr2mS6:3 --overrides '{"containerOverrides":[{"name":"test","command":["/bin/bash","-c","deploy.sh"]}]}'
         fi
       - aws ecs update-service --cluster NDS-CYNC-DEV-Selenium-Grid-Cluster --service test --desired-count 0
-      - aws ecs run-task --cluster NDS-CYNC-DEV-Selenium-Grid-Cluster --task-definition authsplit --overrides '{"containerOverrides":[{"name":"authsplit", "entryPoint":["/bin/bash","-c","deploy.sh"]}]}'
+      - aws ecs run-task --cluster NDS-CYNC-DEV-Selenium-Grid-Cluster --task-definition NDS-CYNC-DEV-Selenium-Grid-Stack-GridHubTask-0ufXKwrr2mS6:3 --overrides '{"containerOverrides":[{"name":"test", "entryPoint":["/bin/bash","-c","deploy.sh"]}]}'
       - aws ecs update-service --cluster NDS-CYNC-DEV-Selenium-Grid-Cluster --service test --desired-count $count
