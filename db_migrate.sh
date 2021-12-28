@@ -5,14 +5,20 @@ ecs_instance_ids=$(aws ecs list-container-instances --cluster $ECS_CLUSTER --que
 echo "instance ids" $ecs_instance_ids
 
 echo "setting desired count to 0"
-aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --desired-count 0
+ecs_set=$(aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --desired-count 0)
 
-echo "get list of task arns"
-task_arns=$(aws ecs list-tasks --cluster $ECS_CLUSTER --service-name $ECS_SERVICE --query 'taskArns[*]' --output text)
-echo "task arns" $task_arns
+echo "get the tasks count"
+task_count=$(aws ecs list-tasks --cluster $ECS_CLUSTER --service-name $ECS_SERVICE --query 'taskArns[*]' --output text | wc -l)
+echo "task count" $task_count
 
-echo "stop all tasks"
-aws ecs stop-task --cluster $ECS_CLUSTER --task $task_arns
+if [ $task_count -gt 0 ]; then
+  echo "get list of task arns"
+  task_arns=$(aws ecs list-tasks --cluster $ECS_CLUSTER --service-name $ECS_SERVICE --query 'taskArns[*]' --output text)
+  echo "task arns" $task_arns
+
+  echo "stop all tasks"
+  aws ecs stop-task --cluster $ECS_CLUSTER --task $task_arns
+fi
 
 echo "get the tasks count"
 task_count=$(aws ecs list-tasks --cluster $ECS_CLUSTER --service-name $ECS_SERVICE --query 'taskArns[*]' --output text | wc -l)
@@ -31,7 +37,7 @@ if [ $task_count -eq 0 ]; then
     echo "check if task is running"
     task_status=$(aws ecs describe-tasks --cluster $ECS_CLUSTER --tasks $start_task --query 'tasks[0].lastStatus' --output text)
     echo "task status" $task_status
-    if [ $task_status -eq "STOPPED" ]; then
+    if [ "$task_status" = "STOPPED" ]; then
       echo "task stopped"
       break
     else
